@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.hadoop.io.Writable;
 import org.terrier.matching.FatQueryResultSet;
@@ -46,7 +47,8 @@ import org.terrier.structures.postings.WritablePosting;
 import org.terrier.utility.StableSort;
 
 @SuppressWarnings("serial")
-/** A version of {@link CandidateResultSet} suitable for use within the Fat framework
+/** A version of {@link CandidateResultSet} suitable for use within the Fat framework. This stores the postings
+ * for each retrieved document.
  * 
  * @author Eric Sutherland, Craig Macdonald
  * @since 4.0
@@ -66,36 +68,21 @@ public class FatCandidateResultSet extends CandidateResultSet implements Writabl
 		super();
 	}	
 	
-	public FatCandidateResultSet(Collection<CandidateResult> q, CollectionStatistics cs, String[] queryTerms, EntryStatistics[] entryStats, double[] keyFrequency, Set<String>[] tags) {
-		super(q);
-		postings = new WritablePosting[q.size()][];
+	@Deprecated
+	public FatCandidateResultSet(List<CandidateResult> resultList, CollectionStatistics cs, String[] queryTerms, EntryStatistics[] entryStats, double[] keyFrequency, Set<String>[] tags) {
+		super(resultList);
 		this.queryTerms = queryTerms;
 		this.entryStats = entryStats;
 		this.keyFrequency = keyFrequency;
 		this.collStats = cs;
 		this.tags = tags;
 		int i=0;
-		for (CandidateResult cc: q)
-		{
-			postings[i] = ((FatCandidateResult) cc).getPostings();
-			i++;
-		}
-	}
 
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public FatCandidateResultSet(List<CandidateResult> q, CollectionStatistics cs, String[] queryTerms, EntryStatistics[] entryStats, double[] keyFrequency) {
-		super(q);
-		postings = new WritablePosting[q.size()][];
-		this.queryTerms = queryTerms;
-		this.entryStats = entryStats;
-		this.keyFrequency = keyFrequency;
-		this.collStats = cs;
-		this.tags = new Set[queryTerms.length];
-		int i=0;
-		for (CandidateResult cc: q)
+		postings = new WritablePosting[resultList.size()][];
+		for (CandidateResult cc: resultList)
 		{
 			postings[i] = ((FatCandidateResult) cc).getPostings();
+			assert verify(postings[i], cc.getDocId()) : "FatCandidateResult at position " + i + " had an id mismatch";
 			i++;
 		}
 	}
@@ -151,11 +138,12 @@ public class FatCandidateResultSet extends CandidateResultSet implements Writabl
 		System.arraycopy(scores, start, resultSet.getScores(), 0, length);
 		System.arraycopy(occurrences, start, resultSet.getOccurrences(), 0, length);
 		System.arraycopy(postings, start, resultSet.getPostings(), 0, length);
+		assert resultSet.verify()  : "FatQueryResultSet verification failed after creation";
 		return resultSet;
 	}
 
 	@Override
-	public void sort(int topDocs) {		
+	public void sort(int topDocs) {
 		StableSort.sortDescending(getScores(), getDocids(), getOccurrences(), topDocs);
 		TIntIntHashMap sortedOrder = new TIntIntHashMap(postings.length);
 		for(int i=0;i<docids.length;i++)
@@ -176,6 +164,7 @@ public class FatCandidateResultSet extends CandidateResultSet implements Writabl
 			tmp[sortedOrder.get(docid)] = postings[i];
 		}
 		postings = tmp;
+		assert this.verify() : "FatCandidateResultSet verification failed after sorting";
 	}
 
 	@Override
@@ -228,8 +217,16 @@ public class FatCandidateResultSet extends CandidateResultSet implements Writabl
 	public void setTags(Set<String>[] tags) {
 		this.tags = tags;
 	}
-	
-	
-	
+
+	static final boolean verify(WritablePosting[] postings, int id) {
+		for (WritablePosting p : postings) {
+			if(p != null && p.getId() != id)
+			{
+				System.err.println("Posting mismatch - expected " + id + " found " + p.getId());
+				return false;
+			}
+		}
+		return true;
+	}
 
 }

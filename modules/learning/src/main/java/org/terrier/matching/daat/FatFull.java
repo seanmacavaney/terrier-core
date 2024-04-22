@@ -28,6 +28,7 @@
 package org.terrier.matching.daat;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
@@ -88,7 +89,7 @@ public class FatFull extends Full {
 	@Override
 	protected CandidateResultSet makeResultSet(
 			DAATFullMatchingState state,
-			Queue<CandidateResult> candidateResultList) 
+			Queue<CandidateResult> candidateResultQueue) 
 	{
 		PostingListManager plm = state.plm;
 		int terms = plm.getNumTerms();
@@ -105,8 +106,11 @@ public class FatFull extends Full {
 			tags[i] = plm.getTags(i);
 			logger.info("term " + queryTerms[i] + " ks="+keyFreqs[i] + " es=" + entryStats[i] + " tag="+tags[i]);
 		}
-		
-		return new FatCandidateResultSet(candidateResultList, super.collectionStatistics, queryTerms, entryStats, keyFreqs, tags);
+
+		final List<CandidateResult> candidateResultList = CandidateResult.sortQueueIntoResultList(candidateResultQueue);
+		FatCandidateResultSet rtr = new FatCandidateResultSet(candidateResultList, super.collectionStatistics, queryTerms, entryStats, keyFreqs, tags);
+		assert rtr.verify() : "FatCandidateResultSet failed verification";
+		return rtr;
 	}
 	
 	@Override

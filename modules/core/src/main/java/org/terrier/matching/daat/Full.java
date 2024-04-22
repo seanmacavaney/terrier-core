@@ -31,6 +31,7 @@ import it.unimi.dsi.fastutil.longs.LongHeapPriorityQueue;
 import it.unimi.dsi.fastutil.longs.LongPriorityQueue;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
@@ -189,7 +190,9 @@ public class Full extends BaseMatching
 
 	protected CandidateResultSet makeResultSet(
 			final DAATFullMatchingState state,
-			final Queue<CandidateResult> candidateResultList) {
+			final Queue<CandidateResult> candidateResultQueue) {
+		
+				final List<CandidateResult> candidateResultList = CandidateResult.sortQueueIntoResultList(candidateResultQueue);
                 return new CandidateResultSet(candidateResultList);
 	}
 

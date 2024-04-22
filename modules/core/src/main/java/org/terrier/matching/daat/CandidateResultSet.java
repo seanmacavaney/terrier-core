@@ -27,11 +27,9 @@
 package org.terrier.matching.daat;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 import org.terrier.matching.QueryResultSet;
 import org.terrier.matching.ResultSet;
@@ -80,15 +78,14 @@ public class CandidateResultSet implements ResultSet, Serializable
 	
 	protected CandidateResultSet(){}
 	
-	/** Create a ResultSet from the specified queue of results */
-	public CandidateResultSet(Collection<CandidateResult> _q)
+	/** Create a ResultSet from the specified list of results. The list MUST be sorted
+	 * by descending score, with ties broken by ascending docid. See daat.Full#makeResultSet() for an example.
+	 */
+	public CandidateResultSet(List<CandidateResult> resultList)
 	{
 		lock = new ReentrantLock();
-		// Fully sort the result list (the PriorityQueue only guarantees the min element is at [0]).
-		// Note that sorting here is by descending score and then by ascending docid for stability reasons;
-		// the natural sort for CandidateResult is different (descending score then descending docid) for DAAT to work properly
-		Collection<CandidateResult> q = _q.stream().filter( res -> res.getScore() != Double.NEGATIVE_INFINITY).sorted(CandidateResult.resultListComparator).collect(Collectors.toList());
-		resultSize = q.size();
+		
+		resultSize = resultList.size();
 		exactResultSize = resultSize;
 
 		docids	    = new int[resultSize];
@@ -96,34 +93,18 @@ public class CandidateResultSet implements ResultSet, Serializable
 		occurrences = new short[resultSize];
 		
 		int i = 0;
-		for (CandidateResult cc: q)
+		double lastScore = Double.POSITIVE_INFINITY;
+		for (CandidateResult cc: resultList)
 		{
 			docids[i] 	   = cc.getDocId();
 			scores[i] 	   = cc.getScore();
 			occurrences[i] = cc.getOccurrence();
-			i++;
-		}
-	}
+			
+			// check all scores are not -inf, and are either descending, or equal with ties broken by docid
+			assert (scores[i] != Double.NEGATIVE_INFINITY) && (scores[i] <= lastScore || (scores[i] == lastScore && docids[i-1] < docids[i]) ) : 
+				"position " + i +" score " + scores[i] + "lastScore" + lastScore + " this docid " + docids[i] + " last docid" + docids[i-1]; 
+			lastScore = scores[i];
 
-	/** Create a ResultSet from the specified list of results */
-	public CandidateResultSet(List<CandidateResult> _q)
-	{
-		lock = new ReentrantLock();
-		// see comment above about sorting
-		Collection<CandidateResult> q = _q.stream().filter( res -> res.getScore() != Double.NEGATIVE_INFINITY).sorted(CandidateResult.resultListComparator).collect(Collectors.toList());
-		resultSize = q.size();
-		exactResultSize = resultSize;
-
-		docids	    = new int[exactResultSize];
-		scores 	    = new double[exactResultSize];
-		occurrences = new short[exactResultSize];
-		
-		int i = 0;
-		for (CandidateResult cc: q)
-		{
-			docids[i] 	   = cc.getDocId();
-			scores[i] 	   = cc.getScore();
-			occurrences[i] = cc.getOccurrence();
 			i++;
 		}
 	}
