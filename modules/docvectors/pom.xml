@@ -9,21 +9,36 @@
 		<relativePath>../../</relativePath>
 	</parent>
 
-	<artifactId>terrier-realtime</artifactId>
-
+	<artifactId>terrier-docvectors</artifactId>
+	<name>terrier-docvectors</name>
+	
 	<dependencies>
 		<dependency>
 			<groupId>org.terrier</groupId>
 			<artifactId>terrier-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.terrier</groupId>
-			<artifactId>terrier-batch-indexers</artifactId>
+			<artifactId>terrier-learning</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.terrier</groupId>
+			<artifactId>terrier-tests</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>net.sf.trove4j</groupId>
+			<artifactId>trove4j</artifactId>
+			<version>2.0.2</version>
+		</dependency>
 	</dependencies>
-
 </project>
