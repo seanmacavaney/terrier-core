@@ -57,9 +57,9 @@ public class RM3 extends RM1 {
         mqt.clear();
         StringBuilder sQuery = new StringBuilder();
         for (ExpansionTerm et : expansions) {
-            mqt.add(QTPBuilder.of(new SingleTermOp(et.getText())).setTag(BaseMatching.BASE_MATCHING_TAG)
-                    .setWeight(et.getWeight()).build());
-            sQuery.append(et.getText() + "^" + et.getWeight() + " ");
+            mqt.add(QTPBuilder.of(new SingleTermOp(et.text)).setTag(BaseMatching.BASE_MATCHING_TAG)
+                    .setWeight(et.weight).build());
+            sQuery.append(et.text + "^" + et.weight + " ");
         }
         logger.info("Reformulated query "+ mqt.getQueryId() +" @ lambda="+this.lambda+": " + sQuery.toString());
         //logger.info("Reformulated query: " + mqt.toString());

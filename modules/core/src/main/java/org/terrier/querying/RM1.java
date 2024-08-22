@@ -25,8 +25,6 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * RM1 preliminary implementation
@@ -48,9 +46,9 @@ public class RM1 implements MQTRewritingProcess
 	 */
 	static class ExpansionTerm 
 	{
-		@Getter protected int termid;
-		@Getter protected String text;
-		@Getter protected double weight;
+		protected int termid;
+		protected String text;
+		protected double weight;
 		
 		public ExpansionTerm(final int termid, final String text, final double weight) 
 		{
@@ -77,9 +75,9 @@ public class RM1 implements MQTRewritingProcess
 		// termid -> term frequency in document map
 		protected Int2IntMap terms;
 		
-		protected @Getter int length;
-		protected @Getter double originalScore;
-		protected @Getter double qlScore;
+		protected int length;
+		protected double originalScore;
+		protected double qlScore;
 		
 		public FeedbackDocument(final int docid, final double originalScore, final Index index) throws IOException
 		{
@@ -124,7 +122,7 @@ public class RM1 implements MQTRewritingProcess
 	protected List<FeedbackDocument> topDocs;
 	protected Int2FloatMap feedbackTermScores;
 	
-	@Setter protected double lambda = 1.0;
+	protected double lambda = 1.0;
 	
 	/**
 	 * Constructor
@@ -173,11 +171,11 @@ public class RM1 implements MQTRewritingProcess
 		StringBuilder sQuery = new StringBuilder();
 		for (ExpansionTerm et : expansions)
 		{
-			mqt.add(QTPBuilder.of(new SingleTermOp(et.getText()))
-				.setWeight(et.getWeight())
+			mqt.add(QTPBuilder.of(new SingleTermOp(et.text))
+				.setWeight(et.weight)
 				.setTag(BaseMatching.BASE_MATCHING_TAG)
 				.build());
-			sQuery.append(et.getText() + "^" + et.getWeight() + " ");
+			sQuery.append(et.text + "^" + et.weight + " ");
 		}
 		logger.info("Reformulated query: " + sQuery.toString());
 		//logger.info("Reformulated query: " + mqt.toString());
@@ -242,7 +240,7 @@ public class RM1 implements MQTRewritingProcess
 		for (int termid: topLexicon) {
 			float fbWeight = 0.0f;
 			for (FeedbackDocument doc: topDocs)
-				fbWeight += (double) doc.getFrequency(termid) / (double) doc.getLength() * doc.getOriginalScore();
+				fbWeight += (double) doc.getFrequency(termid) / (double) doc.length * doc.originalScore;
 			feedbackTermScores.put(termid, fbWeight * (1.0f/topDocs.size())); //see galago line 231 in scoreGrams().
 		}
 	}
@@ -287,6 +285,10 @@ public class RM1 implements MQTRewritingProcess
 			sum += Math.exp(scores[i] - max);
 		
 		return max + Math.log(sum);
+	}
+
+	public void setLambda(double value) {
+		this.lambda = value;
 	}
 
 }
